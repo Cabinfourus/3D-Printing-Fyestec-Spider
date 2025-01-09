@@ -1,0 +1,42 @@
+[gcode_macro FILAMENT_RUNOUT]
+description: Pause print and lift printhead on filament runout
+gcode:
+  # Lift the printhead by 25mm
+  G1 Z25 F500 ; Raise the printhead by 25mm
+  
+  # Inform the user that the filament has run out and to insert new filament
+  M117 Filament runout - Please insert new filament
+  
+  # Wait for filament to be detected by the runout sensor on pin !PA1
+  # The sensor is assumed to be connected to pin !PA1 (active low)
+  M119 ; Check the status of the endstop (to verify if filament is detected)
+  {% set filament_detected = printer['toolhead'].sensor_status("PA1") %}
+  
+  # Wait until the filament sensor detects new filament (i.e., sensor goes HIGH)
+  while filament_detected == False:
+      M119 ; Check the status again
+      {% set filament_detected = printer['toolhead'].sensor_status("PA1") %}
+  
+  # Once new filament is detected, resume the print
+  G1 Z0 ; Lower the printhead back to its original position
+  M104 S{printer[tool].temperature} ; Re-heat the hotend if necessary (use actual temp here)
+  M109 S{printer[tool].temperature} ; Wait for hotend to stabilize at the target temperature
+  G28 X0 Y0 ; Optionally home the X and Y axes before continuing (optional)
+  RESUME ; Resume the print from the last position
+  
+  _________________________________________________________________________________________________________________
+  
+  [gcode_macro FILAMENT_RUNOUT]
+gcode:
+  M400                         ; Wait for all movements to finish
+  PAUSE                         ; Pause the print
+  G91                           ; Switch to relative positioning
+  G1 E-5 F300                   ; Retract a little to avoid oozing
+  G1 Z10 F1000                  ; Move the nozzle up slightly
+  G90                           ; Switch back to absolute positioning
+  M104 S0                       ; Turn off the hotend (optional)
+  M140 S0                       ; Turn off the heated bed (optional)
+  M106 S0                       ; Turn off fans (optional)
+  M300 S500 P200                ; Play a short beep to indicate runout
+  G4 S5                         ; Wait for 5 seconds before continuing
+  ; You can also insert additional actions here (such as notification)

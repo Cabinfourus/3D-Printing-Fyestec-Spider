@@ -1,0 +1,18 @@
+[gcode_macro FILAMENT_RUNOUT]
+
+gcode:
+  G1 Z25 F500 ; Raise the printhead by 25mm
+  M117 Filament runout - Please insert new filament
+  M119 ; Check the status of the endstop (to verify if filament is detected)
+  {% set filament_detected = printer['toolhead'].sensor_status("PA1") %}
+  
+
+  while filament_detected == False:
+      M119 ; Check the status again
+      {% set filament_detected = printer['toolhead'].sensor_status("PA1") %}
+  
+  G1 Z0 ; Lower the printhead back to its original position
+  M104 S{printer[tool].temperature} ; Re-heat the hotend if necessary (use actual temp here)
+  M109 S{printer[tool].temperature} ; Wait for hotend to stabilize at the target temperature
+  G28 X0 Y0 ; Optionally home the X and Y axes before continuing (optional)
+  RESUME ; Resume the print from the last position

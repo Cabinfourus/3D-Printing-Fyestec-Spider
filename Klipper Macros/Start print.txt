@@ -1,0 +1,36 @@
+[gcode_macro START_PRINT]
+description: Start the print and wipe the toolhead before printing
+gcode:
+  G28
+  M140 S{printer['heater_bed'].temperature}  ; Set bed temperature (use your actual bed temp here)
+  M104 S{printer['tool0'].temperature}      ; Set hotend temperature (use your actual hotend temp here)
+  M109 S{printer['tool0'].temperature}      ; Wait for the hotend to reach target temperature
+  M190 S{printer['heater_bed'].temperature} ; Wait for the bed temperature to reach target temperature
+  G1 Z5 F500        ; Raise the nozzle slightly to avoid scraping the bed
+  G1 X0 Y200 F1000  ; Move to the front left corner of the bed (adjust X,Y as necessary)
+  G1 X150 Y200 E5 F300 ; Move across the bed to wipe nozzle (adjust distance and speed)
+  G1 X0 Y200 F1000 ; Return to the wipe start position
+  G1 Z0.2 F500     ; Lower the nozzle to a printing height
+  G1 X50 Y50 Z0.2 F1500 ; Move to the starting point of the print
+  G92 E0                 ; Reset extruder position
+  G1 E10 F200            ; Extrude a little bit to ensure nozzle is primed
+  G1 F1500               ; Set a reasonable feedrate for the first layer
+  BED_MESH_PROFILE LOAD=default
+  M117 Print Starting    ; Display a message indicating the print has started
+  
+  
+  
+  ----------------------------------------------------------------------------------------------------
+  
+  [gcode_macro START_PRINT]
+gcode:
+    {% set BED_TEMP = params.BED_TEMP|default(0)|float %}
+    {% set EXTRUDER_TEMP = params.EXTRUDER_TEMP|default(0)|float %}
+    M140 S{BED_TEMP}
+    G90
+    G28
+    BED_MESH_PROFILE LOAD=default
+    G1 Z5 F3000
+    G1 Z0.15 F300
+    M190 S{BED_TEMP}
+    M109 S{EXTRUDER_TEMP}
